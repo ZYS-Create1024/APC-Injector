@@ -184,7 +184,7 @@ This provides a stable, collision-resistant identity that survives path changes.
 
 ## README.zh-cn
 
-> 📌 中文版摘要请查看：[README.zh.md](./README.zh-cn.md)
+> **中文版摘要请查看**：[README.zh-CN.md](./README.zh-CN.md)
 
 ## License
 
