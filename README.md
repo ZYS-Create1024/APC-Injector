@@ -182,6 +182,10 @@ This provides a stable, collision-resistant identity that survives path changes.
 | x64 | Supported |
 | ARM64 | Supported (uses `vld1q_u8`/`vst1q_u8` for atomic FCB reads) |
 
+## README.zh-cn
+
+> 📌 中文版摘要请查看：[README.zh.md](./README.zh-cn.md)
+
 ## License
 
 MIT License — see [LICENSE](LICENSE) for full text.
