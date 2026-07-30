@@ -1,0 +1,23 @@
+# Visual Studio
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.user
+*.suo
+*.userprefs
+.vs/
+
+# Build outputs
+Debug/
+Release/
+*.sys
+*.pdb
+*.exp
+*.lib
+*.obj
+*.ilk
+
+# Windows Driver
+*.wxp
+*.wmf
+*.wdf
