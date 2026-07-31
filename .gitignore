@@ -21,3 +21,5 @@ Release/
 *.wxp
 *.wmf
 *.wdf
+
+.DS_Store
