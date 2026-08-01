@@ -1,5 +1,19 @@
 ![Buid status](https://img.shields.io/badge/build-passing-brightgreen?style=plastic&logo=C)
+![Platform](https://img.shields.io/badge/platform-Windows-blue)
 # APC-Injector
+
+```
+       Ring 3                      Ring 0 
+┌─────────────────┐          ┌─────────────────┐
+│  R3Comm.exe     │  IOCTL   │  Injector.sys   │
+│  (CLI Tool)     │ ───────► │  (Driver)       │
+│                 │ ◄─────── │                 │
+└─────────────────┘          └─────────────────┘
+         │                           │
+         ▼                           ▼
+   CreateFile()             IRP Dispatch Routine
+   DeviceIoControl()
+```
 
 一个 Windows 内核模式 DLL 注入框架，利用**内核 APC（异步过程调用）**将 DLL 注入到新创建的进程中。
 

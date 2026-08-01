@@ -1,5 +1,19 @@
 ![Buid status](https://img.shields.io/badge/build-passing-brightgreen?style=plastic&logo=C)
+![Platform](https://img.shields.io/badge/platform-Windows-blue)
 # APC-Injector
+
+```
+       Ring 3                      Ring 0 
+┌─────────────────┐          ┌─────────────────┐
+│  R3Comm.exe     │  IOCTL   │  Injector.sys   │
+│  (CLI Tool)     │ ───────► │  (Driver)       │
+│                 │ ◄─────── │                 │
+└─────────────────┘          └─────────────────┘
+         │                           │
+         ▼                           ▼
+   CreateFile()             IRP Dispatch Routine
+   DeviceIoControl()
+```
 
 A Windows kernel-mode DLL injection framework that uses **kernel APC (Asynchronous Procedure Call)** to inject a DLL into newly created processes.
 
@@ -80,6 +94,7 @@ R3Comm.exe whitelist-add C:\Program Files\MyApp\app.exe
 
 # 5. Stop injecting
 R3Comm.exe callback-off
+```
 
 ### Full Command Reference
 
