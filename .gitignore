@@ -16,10 +16,16 @@ Release/
 *.lib
 *.obj
 *.ilk
+*.inf
 
 # Windows Driver
 *.wxp
 *.wmf
 *.wdf
 
+# OS Files
 .DS_Store
+._*
+.Trashes
+ehthumbs.db
+Thumbs.db
