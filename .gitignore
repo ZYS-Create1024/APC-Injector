@@ -1,6 +1,4 @@
 # Visual Studio
-*.sln
-*.vcxproj
 *.vcxproj.filters
 *.user
 *.suo
