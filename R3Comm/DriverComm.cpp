@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 APC-Injector (GitHub: @ZYS-Create1024)
+
 #include "DriverComm.h"
 
 #include <cstdio>

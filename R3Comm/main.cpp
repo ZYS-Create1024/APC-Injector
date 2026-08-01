@@ -1,5 +1,8 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 APC-Injector (GitHub: @ZYS-Create1024)
+
 /*
- * R3Comm â€” User-mode CLI tool for communicating with the MyMonitor
+ * R3Comm ¡ª User-mode CLI tool for communicating with the MyMonitor
  * kernel driver.  Configures APC DLL injection, toggles the
  * process-creation callback, and manages the injection whitelist.
  */
@@ -12,7 +15,7 @@
 
 static void PrintHelp() {
     wprintf(
-        L"R3Comm â€” MyMonitor Driver Communication Tool\n"
+        L"R3Comm ¡ª MyMonitor Driver Communication Tool\n"
         L"\n"
         L"COMMANDS:\n"
         L"  help                      Show this help\n"
@@ -49,13 +52,13 @@ int wmain(int argc, wchar_t* argv[]) {
 
     const wchar_t* cmd = argv[1];
 
-    // â”€â”€ help â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ©¤©¤ help ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
     if (0 == _wcsicmp(cmd, L"help") || 0 == _wcsicmp(cmd, L"-h")) {
         PrintHelp();
         return 0;
     }
 
-    // â”€â”€ status (no driver handle needed) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ©¤©¤ status (no driver handle needed) ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
     if (0 == _wcsicmp(cmd, L"status")) {
         DriverComm comm;
         wprintf(L"[*] Driver device : %s\n", DEVICE_SYMLINK);
@@ -67,19 +70,19 @@ int wmain(int argc, wchar_t* argv[]) {
         return 0;
     }
 
-    // â”€â”€ All other commands need a driver handle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ©¤©¤ All other commands need a driver handle ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
     DriverComm comm;
     if (!comm.Open()) {
         wprintf(L"[!] Failed to open driver device.\n");
         return 2;
     }
 
-    // â”€â”€ set-loadlib â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ©¤©¤ set-loadlib ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
     if (0 == _wcsicmp(cmd, L"set-loadlib")) {
         return comm.AutoResolveAndSetAddresses() ? 0 : 3;
     }
 
-    // â”€â”€ set-dll â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ©¤©¤ set-dll ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
     if (0 == _wcsicmp(cmd, L"set-dll")) {
         if (argc < 3) {
             wprintf(L"[!] Usage: R3Comm.exe set-dll <dllPath>\n");
@@ -88,7 +91,7 @@ int wmain(int argc, wchar_t* argv[]) {
         return comm.SetDllPath(argv[2]) ? 0 : 3;
     }
 
-    // â”€â”€ callback-on / callback-off â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ©¤©¤ callback-on / callback-off ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
     if (0 == _wcsicmp(cmd, L"callback-on")) {
         return comm.TurnOnProcessCallback() ? 0 : 3;
     }
@@ -96,7 +99,7 @@ int wmain(int argc, wchar_t* argv[]) {
         return comm.TurnOffProcessCallback() ? 0 : 3;
     }
 
-    // â”€â”€ whitelist-add â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ©¤©¤ whitelist-add ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
     if (0 == _wcsicmp(cmd, L"whitelist-add")) {
         if (argc < 3) {
             wprintf(L"[!] Usage: R3Comm.exe whitelist-add <filePath>\n");
@@ -105,7 +108,7 @@ int wmain(int argc, wchar_t* argv[]) {
         return comm.AddToWhitelist(argv[2]) ? 0 : 3;
     }
 
-    // â”€â”€ whitelist-remove â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ©¤©¤ whitelist-remove ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
     if (0 == _wcsicmp(cmd, L"whitelist-remove")) {
         if (argc < 3) {
             wprintf(L"[!] Usage: R3Comm.exe whitelist-remove <filePath>\n");
@@ -114,7 +117,7 @@ int wmain(int argc, wchar_t* argv[]) {
         return comm.RemoveFromWhitelist(argv[2]) ? 0 : 3;
     }
 
-    // â”€â”€ whitelist-query â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ©¤©¤ whitelist-query ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
     if (0 == _wcsicmp(cmd, L"whitelist-query")) {
         if (argc < 3) {
             wprintf(L"[!] Usage: R3Comm.exe whitelist-query <filePath>\n");
@@ -126,7 +129,7 @@ int wmain(int argc, wchar_t* argv[]) {
         return 0;
     }
 
-    // â”€â”€ unknown â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ©¤©¤ unknown ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
     wprintf(L"[!] Unknown command: %s\n", cmd);
     wprintf(L"    Run 'R3Comm.exe help' for usage.\n");
     return 1;

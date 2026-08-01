@@ -1,4 +1,7 @@
-﻿// pch.cpp: 与预编译标头对应的源文件
+﻿// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 APC-Injector (GitHub: @ZYS-Create1024)
+
+// pch.cpp: 与预编译标头对应的源文件
 
 #include "pch.h"
 

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 APC-Injector (GitHub: @ZYS-Create1024)
+
 #pragma once
 
 #include "Common.h"
