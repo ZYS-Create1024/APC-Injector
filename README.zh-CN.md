@@ -62,6 +62,8 @@
    - `R3Comm` → 生成 `R3Comm.exe`
 2. 以 **Release** 或 **Debug** 配置、对应目标架构（x64 / ARM64）构建。
 
+> ⚠️ **架构不匹配会导致静默故障。** R3Comm 从自身进程解析 `LoadLibraryW` / `kernel32` / `ntdll` 地址。在 x64 Windows 上运行 32 位 R3Comm 会通过 WoW64 获取到 **32 位地址空间**的地址 —— 内核驱动将错误的地址写入 64 位进程，直接导致注入失败甚至目标进程崩溃。请务必匹配架构：x64 R3Comm ↔ x64 驱动，ARM64 R3Comm ↔ ARM64 驱动。
+
 ### 部署
 
 1. 将 `Injector.sys` 拷贝到目标机器。
@@ -76,6 +78,21 @@
    ```
 
 ### 使用
+
+**一步完成（配置文件）** — 创建一次配置，然后一条命令全部应用：
+
+```cmd
+# 1. 创建配置
+R3Comm.exe config-set dll_path C:\Tools\InjectDll.dll
+
+# 2. （可选）添加白名单条目
+R3Comm.exe whitelist-add C:\Windows\notepad.exe
+
+# 3. 一次性应用全部设置到驱动
+R3Comm.exe apply
+```
+
+**手动（逐步）** — 逐一执行每条命令：
 
 ```cmd
 # 1. 自动解析地址
@@ -95,6 +112,43 @@ R3Comm.exe whitelist-add C:\Program Files\MyApp\app.exe
 R3Comm.exe callback-off
 ```
 
+### 配置文件
+
+R3Comm 会自动读取可执行文件同目录下的 `R3Comm.ini`（可通过 `--config <path>` 或 `R3COMM_CONFIG` 环境变量覆盖）。
+
+**配置格式**（`key = value`，`#` 表示注释）：
+
+```ini
+# R3Comm 配置
+dll_path = "C:\Tools\InjectDll.dll"
+set_loadlib = true
+enable_callback = true
+whitelist = "C:\Windows\notepad.exe"
+whitelist = "C:\Program Files\MyApp\app.exe"
+```
+
+**配置项：**
+
+| 键 | 类型 | 默认值 | 描述 |
+|---|---|---|---|
+| `dll_path` | 字符串 | (空) | 要注入的 DLL 的完整路径 |
+| `set_loadlib` | 布尔 | `true` | `apply` 时自动解析 kernel32/ntdll/LoadLibraryW 地址 |
+| `enable_callback` | 布尔 | `true` | `apply` 时启用进程创建回调 |
+| `whitelist` | 字符串，可重复 | 无 | `apply` 时添加到注入白名单的文件路径 |
+
+**布尔值**支持 `1`/`0`、`true`/`false`、`yes`/`no`、`on`/`off`（不区分大小写）。
+
+**配置管理命令：**
+
+```cmd
+R3Comm.exe config-show                            # 显示当前配置
+R3Comm.exe config-set dll_path "C:\..."           # 设置配置项并保存
+R3Comm.exe config-set whitelist "C:\app.exe"      # 添加到白名单
+R3Comm.exe config-set whitelist-remove "C:\app.exe"  # 从白名单移除
+R3Comm.exe config-set whitelist-clear             # 清空所有白名单条目
+R3Comm.exe --config C:\path\to\my.ini apply       # 使用自定义配置文件
+```
+
 ### 完整命令参考
 
 | 命令 | 描述 |
@@ -108,6 +162,15 @@ R3Comm.exe callback-off
 | `whitelist-add <path>` | 将文件路径添加到白名单 |
 | `whitelist-remove <path>` | 从白名单中移除文件路径 |
 | `whitelist-query <path>` | 查询路径是否在白名单中 |
+| `apply` | 加载配置文件并应用全部设置到驱动 |
+| `config-show` | 显示当前生效的配置文件路径和内容 |
+| `config-set <key> [value]` | 设置配置项并保存到文件。白名单键：`whitelist`（追加）、`whitelist-remove <path>`、`whitelist-clear` |
+
+> 使用 `--config <file>`（或 `-c <file>`）在任何命令**之前**指定自定义配置文件路径：
+> ```cmd
+> R3Comm.exe --config C:\path\to\my.ini apply
+> R3Comm.exe -c my.ini config-show
+> ```
 
 ## 安全设计
 
@@ -159,6 +222,8 @@ APC-Injector/
 │   ├── main.cpp             # 命令行命令解析器
 │   ├── DriverComm.cpp       # DeviceIoControl 封装、IOCTL 处理器
 │   ├── DriverComm.h         # DriverComm 类声明
+│   ├── Config.cpp           # 配置文件解析器（UTF-8 key=value）
+│   ├── Config.h             # 配置结构体和函数声明
 │   └── Common.h             # 共享 IOCTL/结构体定义（与驱动镜像）
 │
 ├── LICENSE                  # MIT License
@@ -199,9 +264,22 @@ APC-Injector/
 | x64 | 支持 |
 | ARM64 | 支持（使用 `vld1q_u8`/`vst1q_u8` 进行原子 FCB 读取） |
 
+## AI构建部分
+- `R3Comm`
+> 这部分我确实不想写,AI完全可以完成，只需要人工审核一下
+> 不过注意: (**要适当使用AI**)
+
+## 打赏
+
+***Buy me a coffee? ☕️***
+
+BTC: [`bc1q9h3z5ny2awv2p9602nrpsf4gvkxe9dyv5rn3hd`](https://mempool.space/address/bc1q9h3z5ny2awv2p9602nrpsf4gvkxe9dyv5rn3hd)
+
+ETH: [`0x31ec0694d0992d8ece95bcb416ce04027a1a6b7b`](https://etherscan.io/address/0x31ec0694d0992d8ece95bcb416ce04027a1a6b7b)
+
 ## 许可证
 
-MIT 许可证 — 完整内容见 [LICENSE](LICENSE)。
+MIT 许可证 — 完整内容见 [LICENSE](LICENSE)
 
 版权所有 © 2026 [@ZYS-Create1024](https://github.com/ZYS-Create1024)
 

@@ -63,6 +63,8 @@ A Windows kernel-mode DLL injection framework that uses **kernel APC (Asynchrono
    - `R3Comm` → builds `R3Comm.exe`
 2. Build in **Release** or **Debug** for your target architecture (x64 / ARM64).
 
+> ⚠️ **Architecture mismatch will cause silent failure.** R3Comm resolves `LoadLibraryW` / `kernel32` / `ntdll` addresses from its own process. A 32-bit R3Comm on x64 Windows runs under WoW64 and resolves **32-bit addresses** — the kernel driver would then write wrong addresses into 64-bit processes. Always match the architecture: x64 R3Comm ↔ x64 driver, ARM64 R3Comm ↔ ARM64 driver.
+
 ### Deploy
 
 1. Copy `Injector.sys` to the target machine.
@@ -77,6 +79,21 @@ A Windows kernel-mode DLL injection framework that uses **kernel APC (Asynchrono
    ```
 
 ### Usage
+
+**One-step (config file)** — create a config once, then apply with a single command:
+
+```cmd
+# 1. Create config
+R3Comm.exe config-set dll_path C:\Tools\InjectDll.dll
+
+# 2. (Optional) Add whitelist entries
+R3Comm.exe whitelist-add C:\Windows\notepad.exe
+
+# 3. Apply everything to the driver
+R3Comm.exe apply
+```
+
+**Manual (step by step)** — issue each command individually:
 
 ```cmd
 # 1. Resolve addresses automatically
@@ -96,6 +113,43 @@ R3Comm.exe whitelist-add C:\Program Files\MyApp\app.exe
 R3Comm.exe callback-off
 ```
 
+### Configuration File
+
+R3Comm automatically reads `R3Comm.ini` from the same directory as the executable (override with `--config <path>` or the `R3COMM_CONFIG` environment variable).
+
+**Config format** (`key = value`, `#` for comments):
+
+```ini
+# R3Comm configuration
+dll_path = "C:\Tools\InjectDll.dll"
+set_loadlib = true
+enable_callback = true
+whitelist = "C:\Windows\notepad.exe"
+whitelist = "C:\Program Files\MyApp\app.exe"
+```
+
+**Config keys:**
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `dll_path` | string | (empty) | Full path of the DLL to inject |
+| `set_loadlib` | bool | `true` | Auto-resolve kernel32/ntdll/LoadLibraryW on `apply` |
+| `enable_callback` | bool | `true` | Enable the process-creation callback on `apply` |
+| `whitelist` | string, repeatable | none | File path to add to the injection whitelist on `apply` |
+
+**Boolean values** accept `1`/`0`, `true`/`false`, `yes`/`no`, `on`/`off` (case-insensitive).
+
+**Config management commands:**
+
+```cmd
+R3Comm.exe config-show                            # Display current config
+R3Comm.exe config-set dll_path "C:\..."           # Set a config key and save
+R3Comm.exe config-set whitelist "C:\app.exe"      # Add to whitelist
+R3Comm.exe config-set whitelist-remove "C:\app.exe"  # Remove from whitelist
+R3Comm.exe config-set whitelist-clear             # Clear all whitelist entries
+R3Comm.exe --config C:\path\to\my.ini apply       # Use a custom config file
+```
+
 ### Full Command Reference
 
 | Command | Description |
@@ -109,6 +163,15 @@ R3Comm.exe callback-off
 | `whitelist-add <path>` | Add a file path to the whitelist |
 | `whitelist-remove <path>` | Remove a file path from the whitelist |
 | `whitelist-query <path>` | Query whether a path is in the whitelist |
+| `apply` | Load config and apply all settings to the driver |
+| `config-show` | Display the effective config file path and contents |
+| `config-set <key> [value]` | Set a config value and save to file. Whitelist keys: `whitelist` (append), `whitelist-remove <path>`, `whitelist-clear` |
+
+> Use `--config <file>` (or `-c <file>`) **before** any command to override the default config file path:
+> ```cmd
+> R3Comm.exe --config C:\path\to\my.ini apply
+> R3Comm.exe -c my.ini config-show
+> ```
 
 ## Security Design
 
@@ -160,6 +223,8 @@ APC-Injector/
 │   ├── main.cpp             # CLI command parser
 │   ├── DriverComm.cpp       # DeviceIoControl wrapper, IOCTL handlers
 │   ├── DriverComm.h         # DriverComm class declaration
+│   ├── Config.cpp           # Config file parser (UTF-8 key=value)
+│   ├── Config.h             # Config struct and function declarations
 │   └── Common.h             # Shared IOCTL/struct definitions (mirrors driver)
 │
 ├── LICENSE                  # MIT License
@@ -201,6 +266,19 @@ This provides a stable, collision-resistant identity that survives path changes.
 ## README.zh-cn
 
 > **中文版摘要请查看**：[README.zh-CN.md](./README.zh-CN.md)
+
+## AI Construction Section
+- `R3Comm`
+> I really don't want to write this part; AI can handle it completely, requiring only manual review.
+> Note: (**Use AI appropriately**)
+
+## Donate
+
+***Buy me a coffee? ☕️***
+
+BTC: [`bc1q9h3z5ny2awv2p9602nrpsf4gvkxe9dyv5rn3hd`](https://mempool.space/address/bc1q9h3z5ny2awv2p9602nrpsf4gvkxe9dyv5rn3hd)
+
+ETH: [`0x31ec0694d0992d8ece95bcb416ce04027a1a6b7b`](https://etherscan.io/address/0x31ec0694d0992d8ece95bcb416ce04027a1a6b7b)
 
 ## License
 
