@@ -1,8 +1,8 @@
-ï»¿// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 // Copyright (c) 2026 APC-Injector (GitHub: @ZYS-Create1024)
 
 #pragma once
 
-#define WIN32_LEAN_AND_MEAN             // ä» Windows å¤´æ–‡ä»¶ä¸­æ’é™¤æå°‘ä½¿ç”¨çš„å†…å®¹
-// Windows å¤´æ–‡ä»¶
+#define WIN32_LEAN_AND_MEAN             // ´Ó Windows Í·ÎÄ¼şÖĞÅÅ³ı¼«ÉÙÊ¹ÓÃµÄÄÚÈİ
+// Windows Í·ÎÄ¼ş
 #include <windows.h>

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 APC-Injector (GitHub: @ZYS-Create1024)
 
-// dllmain.cpp â€” Injected DLL entry point
+// dllmain.cpp ¡ª Injected DLL entry point
 #include "pch.h"
 
 BOOL APIENTRY DllMain(HMODULE hModule,
