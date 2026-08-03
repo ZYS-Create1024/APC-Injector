@@ -60,7 +60,13 @@ VOID InjectDllViaAPC(PEPROCESS Process, HANDLE ProcessId) {
 	}
 
 	KAPC_STATE ApcState{};
-	KeStackAttachProcess(Process, &ApcState);
+	__try {
+		KeStackAttachProcess(Process, &ApcState);
+	}__except (EXCEPTION_EXECUTE_HANDLER) {
+		LOG_ERROR("[Inject] KeStackAttachProcess failed\n");
+		ExFreePool(LocalDllPathBuffer);
+		return;
+	}
 
 	SIZE_T RegionSize{ LocalPathSize };
 	PVOID DllPathVA{};
@@ -115,7 +121,6 @@ VOID InjectDllViaAPC(PEPROCESS Process, HANDLE ProcessId) {
 		if (!MmIsAddressValid(Thread)) continue;
 
 		ObjectReferenceGuard<PETHREAD> ThreadGuard(&Thread);
-		UNREFERENCED_PARAMETER(ThreadGuard);
 
 		PKAPC Apc = (PKAPC)ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(KAPC), 'KAPC');
 		if (nullptr == Apc) {
