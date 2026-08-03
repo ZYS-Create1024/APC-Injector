@@ -1,5 +1,6 @@
 # Visual Studio
 *.vcxproj.filters
+*.vcxproj.user
 *.user
 *.suo
 *.userprefs
