@@ -21,6 +21,9 @@ Release/
 *.wmf
 *.wdf
 
+# Configuration File
+*.ini
+
 # OS Files
 .DS_Store
 ._*
