@@ -6,9 +6,9 @@
 #include <cstdio>
 #include <vector>
 
-// ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+//                                                                                                                                           
 //  Construction / Destruction
-// ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+//                                                                                                                                           
 
 DriverComm::DriverComm(DriverComm&& other) noexcept
     : m_hDevice(other.m_hDevice) {
@@ -28,9 +28,9 @@ DriverComm::~DriverComm() {
     Close();
 }
 
-// ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+//                                                                                                                                           
 //  Open / Close
-// ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+//                                                                                                                                           
 
 bool DriverComm::Open() {
     if (m_hDevice != INVALID_HANDLE_VALUE) {
@@ -38,7 +38,7 @@ bool DriverComm::Open() {
     }
 
     if (!EnableDebugPrivilege()) {
-        wprintf(L"[!] WARNING: Could not enable SeDebugPrivilege ¡ª "
+        wprintf(L"[!] WARNING: Could not enable SeDebugPrivilege    "
             L"driver will reject IOCTLs.\n");
     }
 
@@ -73,9 +73,9 @@ bool DriverComm::IsOpen() const {
     return m_hDevice != INVALID_HANDLE_VALUE;
 }
 
-// ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+//                                                                                                                                           
 //  SeDebugPrivilege
-// ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+//                                                                                                                                           
 
 bool DriverComm::EnableDebugPrivilege() {
     HANDLE hToken = nullptr;
@@ -100,14 +100,19 @@ bool DriverComm::EnableDebugPrivilege() {
     return ok && GetLastError() == ERROR_SUCCESS;
 }
 
-// ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+//                                                                                                                                           
 //  Core IOCTL sender
-// ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+//                                                                                                                                           
 
 bool DriverComm::SendIoctl(DWORD code,
     const void* inBuf, DWORD inSize,
     void* outBuf, DWORD outSize,
     DWORD* bytesReturned) {
+    if (m_hDevice == INVALID_HANDLE_VALUE) {
+        wprintf(L"[!] IOCTL 0x%X failed: device not opened\n", code);
+        return false;
+    }
+
     DWORD junk = 0;
     BOOL ok = DeviceIoControl(
         m_hDevice,
@@ -124,9 +129,9 @@ bool DriverComm::SendIoctl(DWORD code,
     return true;
 }
 
-// ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+//                                                                                                                                           
 //  Injection configuration
-// ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+//                                                                                                                                           
 
 bool DriverComm::AutoResolveAndSetAddresses() {
     wprintf(L"[*] Auto-resolving addresses via GetModuleHandle + GetProcAddress...\n");
@@ -141,7 +146,7 @@ bool DriverComm::AutoResolveAndSetAddresses() {
     }
 
     // LoadLibraryA and LoadLibraryW share the same semantics for APC
-    // injection ¡ª the driver passes a wide-char path, but LoadLibraryA
+    // injection    the driver passes a wide-char path, but LoadLibraryA
     // works as long as the path is within the same codepage.  For safety
     // we use LoadLibraryW.
     FARPROC pLoadLibrary = GetProcAddress(hKernel32, "LoadLibraryW");
@@ -183,9 +188,9 @@ bool DriverComm::SetDllPath(const std::wstring& path) {
         nullptr, 0);
 }
 
-// ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+//                                                                                                                                           
 //  Callback control
-// ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+//                                                                                                                                           
 
 bool DriverComm::TurnOnProcessCallback() {
     wprintf(L"[*] Turning ON process callback\n");
@@ -212,9 +217,9 @@ bool DriverComm::TurnOffProcessCallback() {
     return true;
 }
 
-// ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+//                                                                                                                                           
 //  Whitelist management
-// ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+//                                                                                                                                           
 
 bool DriverComm::AddToWhitelist(const std::wstring& filePath) {
     wprintf(L"[*] Adding to whitelist: %s\n", filePath.c_str());

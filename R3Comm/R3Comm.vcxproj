@@ -183,9 +183,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Common.h" />
+    <ClInclude Include="Config.h" />
     <ClInclude Include="DriverComm.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Config.cpp" />
     <ClCompile Include="DriverComm.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
