@@ -7,6 +7,8 @@
 #include "APC.h"
 #include "ApcTypes.h"
 
+constexpr ULONG64 NonPagedPoolFlags = POOL_FLAG_NON_PAGED | NonPagedPoolNx;
+
 // Global state shared across all modules
 
 extern UNICODE_STRING DeviceName;

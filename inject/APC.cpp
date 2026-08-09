@@ -34,6 +34,7 @@ VOID ApcRundownRoutine(PKAPC Apc)
 }
 
 VOID InjectDllViaAPC(PEPROCESS Process, HANDLE ProcessId) {
+	UNREFERENCED_PARAMETER(ProcessId); //If you user Release build, you can not remove this line to avoid compiler warning.
 
 	// Local copies and temporary variables
 	PVOID  LocalDllPathBuffer{};
@@ -50,7 +51,7 @@ VOID InjectDllViaAPC(PEPROCESS Process, HANDLE ProcessId) {
 
 		LocalPathSize = DllPath.Length + sizeof(WCHAR);
 
-		LocalDllPathBuffer = ExAllocatePool2(POOL_FLAG_NON_PAGED, LocalPathSize, 'LDLL');
+		LocalDllPathBuffer = ExAllocatePool2(NonPagedPoolFlags, LocalPathSize, 'LDLL');
 		if (nullptr == LocalDllPathBuffer) {
 			return;
 		}
@@ -120,9 +121,10 @@ VOID InjectDllViaAPC(PEPROCESS Process, HANDLE ProcessId) {
 
 		if (!MmIsAddressValid(Thread)) continue;
 
-		ObjectReferenceGuard<PETHREAD> ThreadGuard(&Thread);
+		const auto& ThreadGuard = ObjectReferenceGuard<_KTHREAD>(Thread);
+		if(!ThreadGuard) continue;
 
-		PKAPC Apc = (PKAPC)ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(KAPC), 'KAPC');
+		PKAPC Apc = (PKAPC)ExAllocatePool2(NonPagedPoolFlags, sizeof(KAPC), 'KAPC');
 		if (nullptr == Apc) {
 			continue;
 		}
@@ -188,29 +190,22 @@ VOID InjectWorkItemRoutine(PDEVICE_OBJECT DeviceObject, PVOID Context) {
 		ObDereferenceObject(InjectContext->Process);
 	}
 
+	// Free the per-injection work item. The system dequeues a work item
+	// before running its callback, so freeing it here is safe.
+	if (nullptr != InjectContext && nullptr != InjectContext->WorkItem) {
+		IoFreeWorkItem(InjectContext->WorkItem);
+	}
+
 	// Free the injection context
 	if (nullptr != InjectContext) {
 		ExFreePoolWithTag(InjectContext, 'InjD');
 	}
 
-	// Only free WorkItem when unloading; during normal operation the WorkItem
-	// is reused across injections to avoid repeated alloc/free cycles.
-	if (IsUnloading) {
-		PIO_WORKITEM SavedWorkItem = nullptr;
-		{
-			SpinLockGuard Guard(&DeviceExtension->StateLock);
-			SavedWorkItem = DeviceExtension->WorkItem;
-			DeviceExtension->WorkItem = nullptr;
-		}
-
-		if (nullptr != SavedWorkItem) {
-			IoFreeWorkItem(SavedWorkItem);
-		}
+	// Last touch of DeviceExtension: notify DriverUnload once every pending
+	// work item has fully completed (including the frees above).
+	if (0 == InterlockedDecrement(&DeviceExtension->PendingWorkItems)) {
+		KeSetEvent(&DeviceExtension->WorkItemsCompletedEvent, IO_NO_INCREMENT, FALSE);
 	}
-
-	// Always signal the completion event so DriverUnload can wait for any
-	// in-flight work item to finish.
-	KeSetEvent(&DeviceExtension->WorkItemCompletedEvent, IO_NO_INCREMENT, FALSE);
 	LOG_INFO("[WorkItem] Work item routine completed");
 }
 
@@ -221,6 +216,7 @@ NTSTATUS QueueInjectWorkItem(PEPROCESS Process, HANDLE ProcessId) {
 	PDEVICE_OBJECT DeviceObject{};
 	PINJECT_CONTEXT InjectContext{};
 	PDEVICE_EXTENSION DeviceExtension{};
+	PIO_WORKITEM WorkItem{};
 
 	NTSTATUS DeviceObjectStatus = IoGetDeviceObjectPointer(
 		&DeviceName,
@@ -238,42 +234,55 @@ NTSTATUS QueueInjectWorkItem(PEPROCESS Process, HANDLE ProcessId) {
 	}
 
 	DeviceExtension = (PDEVICE_EXTENSION)DeviceObject->DeviceExtension;
+
+	InjectContext = (PINJECT_CONTEXT)ExAllocatePool2(NonPagedPoolFlags, sizeof(INJECT_CONTEXT), 'InjD');
+	if (nullptr == InjectContext) {
+		Status = STATUS_INSUFFICIENT_RESOURCES;
+		goto Cleanup;
+	}
+	InjectContext->Process = Process;
+	InjectContext->ProcessId = ProcessId;
+
+	// One work item per injection: this keeps concurrent process-creation
+	// notifications from re-queueing the same work item.
+	WorkItem = IoAllocateWorkItem(DeviceObject);
+	if (nullptr == WorkItem) {
+		Status = STATUS_INSUFFICIENT_RESOURCES;
+		goto Cleanup;
+	}
+	InjectContext->WorkItem = WorkItem;
+
+	// Serialize with DriverUnload: once IsUnloading is set no new work items
+	// are queued, and the pending counter keeps the device alive until every
+	// in-flight work item completes.
 	{
 		SpinLockGuard Guard(&DeviceExtension->StateLock);
 		if (DeviceExtension->IsUnloading) {
+			Status = STATUS_DELETE_PENDING;
 			goto Cleanup;
 		}
-
-		InjectContext = (PINJECT_CONTEXT)ExAllocatePool2(POOL_FLAG_NON_PAGED, sizeof(INJECT_CONTEXT), 'InjD');
-		if (nullptr == InjectContext) {
-			Status = STATUS_INSUFFICIENT_RESOURCES;
-			goto Cleanup;
-		};
-
-		InjectContext->Process = Process;
-		InjectContext->ProcessId = ProcessId;
 
 		// Reference the process object to keep it alive until the work item
 		// completes. The matching ObDereferenceObject is in InjectWorkItemRoutine.
 		ObReferenceObject(Process);
-		if (nullptr == DeviceExtension->WorkItem) {
-			DeviceExtension->WorkItem = IoAllocateWorkItem(DeviceObject);
-			if (nullptr == DeviceExtension->WorkItem) {
-				ObDereferenceObject(Process);
-				ExFreePoolWithTag(InjectContext, 'InjD');
-				Status = STATUS_INSUFFICIENT_RESOURCES;
-				goto Cleanup;
-			}
-		}
+		InterlockedIncrement(&DeviceExtension->PendingWorkItems);
 	}
 
 	IoQueueWorkItem(
-		DeviceExtension->WorkItem,
+		WorkItem,
 		InjectWorkItemRoutine,
 		CriticalWorkQueue,
 		InjectContext
 	);
 
 Cleanup:
+	if (!NT_SUCCESS(Status)) {
+		if (nullptr != WorkItem) {
+			IoFreeWorkItem(WorkItem);
+		}
+		if (nullptr != InjectContext) {
+			ExFreePoolWithTag(InjectContext, 'InjD');
+		}
+	}
 	return Status;
 }

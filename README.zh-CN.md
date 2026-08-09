@@ -5,7 +5,7 @@
 ```
        Ring 3                      Ring 0 
 ┌─────────────────┐          ┌─────────────────┐
-│  R3Comm.exe     │  IOCTL   │  Injector.sys   │
+│  R3Comm.exe     │  IOCTL   │  Inject.sys   │
 │  (CLI Tool)     │ ───────► │  (Driver)       │
 │                 │ ◄─────── │                 │
 └─────────────────┘          └─────────────────┘
@@ -19,13 +19,13 @@
 
 | 组件 | 类型 | 描述 |
 |-----------|------|-------------|
-| `inject` | 内核驱动 | `Injector.sys` — 注册进程创建回调，向新进程排队用户模式 APC 以调用 `LoadLibraryW` |
+| `inject` | 内核驱动 | `Inject.sys` — 注册进程创建回调，向新进程排队用户模式 APC 以调用 `LoadLibraryW` |
 | `InjectDll` | 用户态 DLL | 注入目标进程的载荷 DLL（在 `DllMain` 中自定义你的逻辑） |
 | `R3Comm` | 用户态 CLI | `R3Comm.exe` — 通过 IOCTL 配置驱动：设置地址、DLL 路径、开关回调、管理白名单 |
 
 ## 工作原理
 
-1. **加载驱动** — `Injector.sys` 以内核驱动身份注册，创建设备对象（`\Device\MyMonitor`）及符号链接（`\\.\MyMonitorLink`）。
+1. **加载驱动** — `Inject.sys` 以内核驱动身份注册，创建设备对象（`\Device\MyMonitor`）及符号链接（`\\.\MyMonitorLink`）。
 
 2. **配置地址** — `R3Comm.exe set-loadlib` 通过 `GetModuleHandle` + `GetProcAddress` 解析 `kernel32.dll` / `ntdll.dll` 基址以及 `LoadLibraryW` 地址，然后发送给驱动。在 x64 Windows 上，这些地址是系统全局的（在所有进程中相同）。
 
@@ -57,7 +57,7 @@
 ### 构建
 
 1. 在 Visual Studio 中打开各 `.sln` 文件：
-   - `inject` → 生成 `Injector.sys`
+   - `inject` → 生成 `Inject.sys`
    - `InjectDll` → 生成 `InjectDll.dll`
    - `R3Comm` → 生成 `R3Comm.exe`
 2. 以 **Release** 或 **Debug** 配置、对应目标架构（x64 / ARM64）构建。
@@ -66,10 +66,10 @@
 
 ### 部署
 
-1. 将 `Injector.sys` 拷贝到目标机器。
+1. 将 `Inject.sys` 拷贝到目标机器。
 2. 创建内核服务：
    ```cmd
-   sc create MyMonitor type= kernel binPath= C:\path\to\Injector.sys
+   sc create MyMonitor type= kernel binPath= C:\path\to\Inject.sys
    sc start MyMonitor
    ```
 3. 验证驱动正在运行：

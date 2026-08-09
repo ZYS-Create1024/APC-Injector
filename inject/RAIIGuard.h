@@ -30,15 +30,40 @@ private:
 
 template<typename T>
 struct ObjectReferenceGuard {
-	ObjectReferenceGuard(T* Obj) :Object(Obj) {
-		if (nullptr != Object) ObReferenceObject(Obj);
-		LOG_INFO("Referencing Object: %p\n", Obj);
+	explicit ObjectReferenceGuard(T* Obj = nullptr) :Object(nullptr), IsReferenced(FALSE) {
+		if (nullptr != Obj) {
+			if(NT_SUCCESS(ObReferenceObjectSafe(Obj))) {
+				Object = Obj;
+				IsReferenced = TRUE;
+				LOG_INFO("Referencing Object: %p\n", Obj);
+			}
+			else {
+				LOG_ERROR("Failed to reference Object: %p\n", Obj);
+			}
+		}
 	}
 
-	~ObjectReferenceGuard() {
+	[[deprecated("Use constructor instead. Unsafe reference may cause crashes.")]]
+	static ObjectReferenceGuard<T> UnSafeGuard(T* Obj) noexcept {
+		ObjectReferenceGuard<T> Guard;
+		if (nullptr != Obj) {
+			ObReferenceObject(Obj);
+			Guard.Object = Obj;
+			Guard.IsReferenced = TRUE;
+			LOG_INFO("Unsafe referencing Object: %p\n", Obj);
+		}
+		return Guard;
+	} // Not recommended. Use the constructor to create a safe reference guard unless 
+	  // you are certain the object is safe. This exists only for compatibility.
+
+
+	~ObjectReferenceGuard() noexcept {
 		LOG_INFO("Dereferencing Object: %p\n", Object);
-		if (nullptr != Object) ObDereferenceObject(Object);
+		if (nullptr != Object && IsReferenced) ObDereferenceObject(Object);
 	}
+
+	explicit operator bool() const { return Object != nullptr && IsReferenced; }
+	T* Get() const { return Object; }
 
 	ObjectReferenceGuard(const ObjectReferenceGuard&) = delete;
 	ObjectReferenceGuard& operator=(const ObjectReferenceGuard&) = delete;
@@ -47,4 +72,5 @@ struct ObjectReferenceGuard {
 	ObjectReferenceGuard& operator=(ObjectReferenceGuard&&) = delete;
 private:
 	T* Object{};
+	BOOLEAN IsReferenced{};
 };
