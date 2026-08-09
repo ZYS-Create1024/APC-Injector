@@ -161,7 +161,7 @@ NTSTATUS DeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 				AddressInfo = nullptr;
 			}
 
-			AddressInfo = (BaseAddressInfo*)ExAllocatePool2(POOL_FLAG_NON_PAGED, APIAddressLength, 'ADDR');
+			AddressInfo = (BaseAddressInfo*)ExAllocatePool2(NonPagedPoolFlags, APIAddressLength, 'ADDR');
 			if (nullptr == AddressInfo) {
 				LOG_ERROR("Failed to allocate memory for AddressInfo");
 				Status = STATUS_INSUFFICIENT_RESOURCES;
@@ -209,7 +209,7 @@ NTSTATUS DeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 			}
 
 			USHORT ByteLength = (USHORT)(CharCount * sizeof(WCHAR));
-			DllPath.Buffer = (PWCH)ExAllocatePool2(POOL_FLAG_NON_PAGED, ByteLength, 'DLL ');
+			DllPath.Buffer = (PWCH)ExAllocatePool2(NonPagedPoolFlags, ByteLength, 'DLL ');
 			if (nullptr == DllPath.Buffer) {
 				LOG_ERROR("Failed to allocate memory for DLL path\n");
 				Status = STATUS_INSUFFICIENT_RESOURCES;
@@ -327,6 +327,7 @@ NTSTATUS DeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 		}
 
 		ULONG64 Index = GetBitmapIndex(FileObject);
+		ObDereferenceObject(FileObject);
 		LOG_ERROR("[Whitelist] Query index 0x%llX\n", Index);
 
 		BOOLEAN Present = FALSE;
@@ -374,14 +375,23 @@ VOID DriverUnload(PDRIVER_OBJECT DriverObject) {
 	IsProcessCallBack = FALSE;
 	PsSetCreateProcessNotifyRoutineEx(CreateProcessNotifyRoutineEx, TRUE);
 
-	// Drain in-flight work item
+	// Drain in-flight work items: once IsUnloading is set under the state
+	// lock, no new work items can be queued. Wait until the pending counter
+	// reaches zero; the completion event is re-armed before each wait so a
+	// stale signal from an earlier injection cannot short-circuit it.
 	if (DriverObject->DeviceObject) {
 		PDEVICE_EXTENSION Exit = (PDEVICE_EXTENSION)DriverObject->DeviceObject->DeviceExtension;
-		Exit->IsUnloading = TRUE;
-		if (Exit->WorkItem) {
-			KeWaitForSingleObject(&Exit->WorkItemCompletedEvent,
+
+		{
+			SpinLockGuard Guard(&Exit->StateLock);
+			Exit->IsUnloading = TRUE;
+		}
+
+		while (InterlockedCompareExchange(&Exit->PendingWorkItems, 0, 0) != 0) {
+			KeClearEvent(&Exit->WorkItemsCompletedEvent);
+			if (InterlockedCompareExchange(&Exit->PendingWorkItems, 0, 0) == 0) break;
+			KeWaitForSingleObject(&Exit->WorkItemsCompletedEvent,
 				Executive, KernelMode, FALSE, NULL);
-			IoFreeWorkItem(Exit->WorkItem);
 		}
 	}
 
@@ -443,9 +453,9 @@ extern "C" NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING Reg
 	PDEVICE_EXTENSION DeviceExtension{ (PDEVICE_EXTENSION)DeviceObject->DeviceExtension };
 	RtlZeroMemory(DeviceExtension, sizeof(DEVICE_EXTENSION));
 	DeviceExtension->DeviceObject = DeviceObject;
-	DeviceExtension->WorkItem = nullptr;
+	DeviceExtension->PendingWorkItems = 0;
 	DeviceExtension->IsUnloading = FALSE;
-	KeInitializeEvent(&DeviceExtension->WorkItemCompletedEvent, NotificationEvent, FALSE);
+	KeInitializeEvent(&DeviceExtension->WorkItemsCompletedEvent, NotificationEvent, FALSE);
 
 
 	Status = IoCreateSymbolicLink(&SymbolicLinkName, &DeviceName);
@@ -484,13 +494,18 @@ extern "C" NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING Reg
 		LOG_ERROR("Failed to find thread list entry offset");
 	}
 
-	BitMapPoolAddress = ExAllocatePool2(POOL_FLAG_NON_PAGED, BIT_MAP_SIZE, 'BITM');
+	BitMapPoolAddress = ExAllocatePool2(NonPagedPoolFlags, BIT_MAP_SIZE, 'BITM');
 	if (nullptr == BitMapPoolAddress) {
 		LOG_ERROR("Failed to allocate memory");
-		Status = STATUS_INVALID_PARAMETER;
+		Status = STATUS_INSUFFICIENT_RESOURCES;
 		goto Cleanup;
 	}
-	WhiteListInit(BitMapPoolAddress);
+
+	Status = WhiteListInit(BitMapPoolAddress);
+	if (!NT_SUCCESS(Status)) {
+		LOG_ERROR("WhiteListInit failed: 0x%08X", Status);
+		goto Cleanup;
+	}
 
 	KeInitializeSpinLock(&ProcessCallBackSpinLock);
 	KeInitializeEvent(&AllApcsCompletedEvent, NotificationEvent, FALSE);
@@ -503,6 +518,10 @@ extern "C" NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING Reg
 
 Cleanup:
 	IoDeleteSymbolicLink(&SymbolicLinkName);
+	if (nullptr != BitMapPoolAddress) {
+		ExFreePool(BitMapPoolAddress);
+		BitMapPoolAddress = nullptr;
+	}
 	if (DeviceObject) {
 		IoDeleteDevice(DeviceObject);
 		DeviceObject = nullptr;

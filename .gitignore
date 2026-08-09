@@ -9,6 +9,9 @@
 # Build outputs
 Debug/
 Release/
+x64/
+ARM64/
+obj/
 *.sys
 *.pdb
 *.exp
@@ -31,3 +34,6 @@ Release/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+#backup Files
+/backup*

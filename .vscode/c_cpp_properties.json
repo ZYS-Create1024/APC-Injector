@@ -1,0 +1,44 @@
+{
+    "version": 4,
+    "configurations": [
+        {
+            "name": "Win64",
+            "includePath": [
+                "${workspaceFolder}/inject",
+                "${workspaceFolder}/InjectDll",
+                "${workspaceFolder}/R3Comm",
+                "${workspaceFolder}/**",
+                "C:/Program Files (x86)/Windows Kits/10/Include/10.0.26100.0/km",
+                "C:/Program Files (x86)/Windows Kits/10/Include/10.0.26100.0/km/crt",
+                "C:/Program Files (x86)/Windows Kits/10/Include/10.0.26100.0/shared",
+                "C:/Program Files (x86)/Windows Kits/10/Include/10.0.26100.0/ucrt",
+                "C:/Program Files (x86)/Windows Kits/10/Include/10.0.26100.0/um",
+                "C:/Program Files/Microsoft Visual Studio/2022/Professional/VC/Tools/MSVC/14.44.35207/include"
+            ],
+            "defines": [
+                "_AMD64_",
+                "_WIN64",
+                "_KERNEL_MODE"
+            ],
+            "compilerPath": "C:/Program Files/Microsoft Visual Studio/2022/Professional/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "windows-msvc-x64",
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/inject",
+                    "${workspaceFolder}/InjectDll",
+                    "${workspaceFolder}/R3Comm",
+                    "${workspaceFolder}/**",
+                    "C:/Program Files (x86)/Windows Kits/10/Include/10.0.26100.0/km", //Attention:If you have a different version of the Windows SDK, change this path accordingly
+                    "C:/Program Files (x86)/Windows Kits/10/Include/10.0.26100.0/km/crt",
+                    "C:/Program Files (x86)/Windows Kits/10/Include/10.0.26100.0/shared",
+                    "C:/Program Files (x86)/Windows Kits/10/Include/10.0.26100.0/ucrt",
+                    "C:/Program Files (x86)/Windows Kits/10/Include/10.0.26100.0/um",
+                    "C:/Program Files/Microsoft Visual Studio/2022/Professional/VC/Tools/MSVC/14.44.35207/include"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
+        }
+    ]
+}

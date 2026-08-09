@@ -5,7 +5,7 @@
 ```
        Ring 3                      Ring 0 
 ┌─────────────────┐          ┌─────────────────┐
-│  R3Comm.exe     │  IOCTL   │  Injector.sys   │
+│  R3Comm.exe     │  IOCTL   │  Inject.sys   │
 │  (CLI Tool)     │ ───────► │  (Driver)       │
 │                 │ ◄─────── │                 │
 └─────────────────┘          └─────────────────┘
@@ -20,13 +20,13 @@ A Windows kernel-mode DLL injection framework that uses **kernel APC (Asynchrono
 
 | Component | Type | Description |
 |-----------|------|-------------|
-| `inject` | Kernel Driver | `Injector.sys` — registers a process-creation callback, queues user-mode APCs into new processes to call `LoadLibraryW` |
+| `inject` | Kernel Driver | `Inject.sys` — registers a process-creation callback, queues user-mode APCs into new processes to call `LoadLibraryW` |
 | `InjectDll` | User-mode DLL | The payload DLL injected into target processes (customize `DllMain` with your own logic) |
 | `R3Comm` | User-mode CLI | `R3Comm.exe` — configures the driver via IOCTL: sets addresses, DLL path, toggles callback, manages whitelist |
 
 ## How It Works
 
-1. **Load the driver** — `Injector.sys` registers as a kernel driver and creates a device object (`\Device\MyMonitor`) with a symbolic link (`\\.\MyMonitorLink`).
+1. **Load the driver** — `Inject.sys` registers as a kernel driver and creates a device object (`\Device\MyMonitor`) with a symbolic link (`\\.\MyMonitorLink`).
 
 2. **Configure addresses** — `R3Comm.exe set-loadlib` resolves `kernel32.dll` / `ntdll.dll` base addresses and `LoadLibraryW` via `GetModuleHandle` + `GetProcAddress`, then sends them to the driver. On x64 Windows these addresses are system-wide (same in every process).
 
@@ -58,7 +58,7 @@ A Windows kernel-mode DLL injection framework that uses **kernel APC (Asynchrono
 ### Build
 
 1. Open each `.sln` in Visual Studio:
-   - `inject` → builds `Injector.sys`
+   - `inject` → builds `Inject.sys`
    - `InjectDll` → builds `InjectDll.dll`
    - `R3Comm` → builds `R3Comm.exe`
 2. Build in **Release** or **Debug** for your target architecture (x64 / ARM64).
@@ -67,10 +67,10 @@ A Windows kernel-mode DLL injection framework that uses **kernel APC (Asynchrono
 
 ### Deploy
 
-1. Copy `Injector.sys` to the target machine.
+1. Copy `Inject.sys` to the target machine.
 2. Create a kernel service:
    ```cmd
-   sc create MyMonitor type= kernel binPath= C:\path\to\Injector.sys
+   sc create MyMonitor type= kernel binPath= C:\path\to\Inject.sys
    sc start MyMonitor
    ```
 3. Verify the driver is running:

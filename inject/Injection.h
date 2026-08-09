@@ -1,27 +1,28 @@
-// SPDX-License-Identifier: MIT
+ï»¿// SPDX-License-Identifier: MIT
 // Copyright (c) 2026 APC-Injector (GitHub: @ZYS-Create1024)
 
 #pragma once
 #include <ntifs.h>
 
-// ©¤©¤ Injection context passed to work items
+// â”€â”€ Injection context passed to work items
 
 typedef struct INJECT_CONTEXT {
 	PEPROCESS Process;
 	HANDLE ProcessId;
+	PIO_WORKITEM WorkItem;
 } INJECT_CONTEXT, *PINJECT_CONTEXT;
 
-// ©¤©¤ Device extension (work item + unload coordination)
+// â”€â”€ Device extension (work item + unload coordination)
 
 typedef struct DEVICE_EXTENSION {
 	KSPIN_LOCK StateLock;
 	PDEVICE_OBJECT DeviceObject;
-	PIO_WORKITEM WorkItem;
-	KEVENT WorkItemCompletedEvent;
+	KEVENT WorkItemsCompletedEvent;
+	volatile LONG PendingWorkItems;
 	BOOLEAN IsUnloading;
 } DEVICE_EXTENSION, *PDEVICE_EXTENSION;
 
-// ©¤©¤ Injection functions
+// â”€â”€ Injection functions
 
 VOID InjectDllViaAPC(PEPROCESS Process, HANDLE ProcessId);
 VOID InjectWorkItemRoutine(PDEVICE_OBJECT DeviceObject, PVOID Context);
