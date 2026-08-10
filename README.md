@@ -5,7 +5,7 @@
 ```
        Ring 3                      Ring 0 
 ┌─────────────────┐          ┌─────────────────┐
-│  R3Comm.exe     │  IOCTL   │  Inject.sys   │
+│  R3Comm.exe     │  IOCTL   │  Inject.sys     │
 │  (CLI Tool)     │ ───────► │  (Driver)       │
 │                 │ ◄─────── │                 │
 └─────────────────┘          └─────────────────┘
