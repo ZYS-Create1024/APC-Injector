@@ -7,7 +7,7 @@
 #include "APC.h"
 #include "ApcTypes.h"
 
-constexpr ULONG64 NonPagedPoolFlags = POOL_FLAG_NON_PAGED | NonPagedPoolNx;
+constexpr ULONG64 NonPagedPoolFlags = POOL_FLAG_NON_PAGED;
 
 // Global state shared across all modules
 

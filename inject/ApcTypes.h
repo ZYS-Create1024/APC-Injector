@@ -6,7 +6,8 @@
 
 // KAPC environment
 
-typedef enum _KAPC_ENVIRONMENT {
+typedef enum _KAPC_ENVIRONMENT
+{
 	OriginalApcEnvironment,
 	AttachedApcEnvironment,
 	CurrentApcEnvironment,
@@ -81,3 +82,6 @@ VOID ApcKernelRoutine(PKAPC Apc, PKNORMAL_ROUTINE* NormalRoutine,
 	PVOID* SystemArgument2);
 
 VOID ApcRundownRoutine(PKAPC Apc);
+
+VOID ApcLookasideInit();
+VOID ApcLookasideCleanup();

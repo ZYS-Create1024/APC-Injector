@@ -3,7 +3,8 @@
 
 #pragma once
 
-typedef struct {
+typedef struct
+{
 	ULONG64 LoadLibraryAddress;
 	ULONG64 Kernel32BaseAddress;
 	ULONG64 NtdllBaseAddress;

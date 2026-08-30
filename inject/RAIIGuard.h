@@ -5,13 +5,15 @@
 #include "debug.h"
 
 
-struct SpinLockGuard {
+struct SpinLockGuard 
+{
 	SpinLockGuard(PKSPIN_LOCK SpinLock) :
 		SpinLock(SpinLock), OldIrql(0) {
 		KeAcquireSpinLock(SpinLock, &OldIrql);
 	}
 
-	~SpinLockGuard() noexcept {
+	~SpinLockGuard() noexcept 
+	{
 		if (nullptr != SpinLock) KeReleaseSpinLock(SpinLock, OldIrql);
 	}
 
@@ -29,10 +31,13 @@ private:
 
 
 template<typename T>
-struct ObjectReferenceGuard {
+struct ObjectReferenceGuard 
+{
 	explicit ObjectReferenceGuard(T* Obj = nullptr) :Object(nullptr), IsReferenced(FALSE) {
-		if (nullptr != Obj) {
-			if(NT_SUCCESS(ObReferenceObjectSafe(Obj))) {
+		if (nullptr != Obj) 
+		{
+			if(NT_SUCCESS(ObReferenceObjectSafe(Obj))) 
+			{
 				Object = Obj;
 				IsReferenced = TRUE;
 				LOG_INFO("Referencing Object: %p\n", Obj);
@@ -43,21 +48,9 @@ struct ObjectReferenceGuard {
 		}
 	}
 
-	[[deprecated("Use constructor instead. Unsafe reference may cause crashes.")]]
-	static ObjectReferenceGuard<T> UnSafeGuard(T* Obj) noexcept {
-		ObjectReferenceGuard<T> Guard;
-		if (nullptr != Obj) {
-			ObReferenceObject(Obj);
-			Guard.Object = Obj;
-			Guard.IsReferenced = TRUE;
-			LOG_INFO("Unsafe referencing Object: %p\n", Obj);
-		}
-		return Guard;
-	} // Not recommended. Use the constructor to create a safe reference guard unless 
-	  // you are certain the object is safe. This exists only for compatibility.
 
-
-	~ObjectReferenceGuard() noexcept {
+	~ObjectReferenceGuard() noexcept 
+	{
 		LOG_INFO("Dereferencing Object: %p\n", Object);
 		if (nullptr != Object && IsReferenced) ObDereferenceObject(Object);
 	}

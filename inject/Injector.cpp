@@ -43,14 +43,17 @@ PVOID BitMapPoolAddress{};
 VOID CreateProcessNotifyRoutineEx(
 	PEPROCESS Process,
 	HANDLE ProcessId,
-	PPS_CREATE_NOTIFY_INFO CreateInfo) {
+	PPS_CREATE_NOTIFY_INFO CreateInfo)
+	{
 
-	if (NULL == CreateInfo) {
+	if (NULL == CreateInfo)
+	{
 		LOG_INFO("[Inject] Process %p is exiting", ProcessId);
 		return;
 	}
 
-	if (nullptr != CreateInfo->ImageFileName) {
+	if (nullptr != CreateInfo->ImageFileName)
+	{
 		LOG_INFO("[Inject] Process %wZ is starting", CreateInfo->ImageFileName);
 	}
 	else {
@@ -70,25 +73,30 @@ VOID CreateProcessNotifyRoutineEx(
 			ThreadListEntryOffset != 0UL);
 	}
 
-	if (!ShouldInject) {
+	if (!ShouldInject)
+	{
 		return;
 	}
 
 	HANDLE Pid = PsGetProcessId(Process);
-	if ((ULONG64)Pid <= 4ULL) {
+	if ((ULONG64)Pid <= 4ULL)
+	{
 		return;
 	}
 
-	if (nullptr == PsIsProtectedProcessLight) {
+	if (nullptr == PsIsProtectedProcessLight)
+	{
 		LOG_ERROR("PsIsProtectedProcessLight is empty");
 		return;
 	}
 	if (PsIsProtectedProcessLight(Process))return; //is PPL process
 
 	// Whitelist check: if active, only inject whitelisted processes
-	if (WhitelistActive && nullptr != BitMapPoolAddress) {
+	if (WhitelistActive && nullptr != BitMapPoolAddress)
+	{
 		ULONG64 Index = GetBitmapIndex(CreateInfo->FileObject);
-		if (QueryMap(BitMapPoolAddress, Index)) {
+		if (QueryMap(BitMapPoolAddress, Index))
+		{
 			QueueInjectWorkItem(Process, ProcessId);
 		}
 		else {
@@ -100,7 +108,8 @@ VOID CreateProcessNotifyRoutineEx(
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-inline NTSTATUS CheckCallerDebugPrivilege(KPROCESSOR_MODE Mode) noexcept {
+inline NTSTATUS CheckCallerDebugPrivilege(KPROCESSOR_MODE Mode) noexcept
+{
 	LUID DebugPrivilegeLuid{};
 	DebugPrivilegeLuid.LowPart = SE_DEBUG_PRIVILEGE;
 	DebugPrivilegeLuid.HighPart = 0L;
@@ -110,21 +119,24 @@ inline NTSTATUS CheckCallerDebugPrivilege(KPROCESSOR_MODE Mode) noexcept {
 
 
 
-NTSTATUS DeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
+NTSTATUS DeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
+{
 	UNREFERENCED_PARAMETER(DeviceObject);
 
 	NTSTATUS Status = STATUS_SUCCESS;
 	Irp->IoStatus.Information = 0ULL;
 
 	KPROCESSOR_MODE CallerMode = Irp->RequestorMode;
-	if (CallerMode != UserMode) {
+	if (CallerMode != UserMode)
+	{
 		LOG_ERROR("Caller is not in user mode");
 		Status = STATUS_ACCESS_DENIED;
 		Irp->IoStatus.Information = 0ULL;
 		goto ReturnStatus;
 	}
 
-	if (CheckCallerDebugPrivilege(CallerMode) != STATUS_SUCCESS) {
+	if (CheckCallerDebugPrivilege(CallerMode) != STATUS_SUCCESS)
+	{
 		LOG_ERROR("Caller does not have debug privilege");
 		Status = STATUS_ACCESS_DENIED;
 		Irp->IoStatus.Information = 0ULL;
@@ -145,7 +157,8 @@ NTSTATUS DeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 	switch (ControlCode) {
 	case IOCTL_SET_LOADLIBRARY_ADDRESS: {
 		LOG_INFO("Received custom IOCTL command");
-		if (nullptr == SystemBuffer || InputBufferLength < sizeof(BaseAddressInfo)) {
+		if (nullptr == SystemBuffer || InputBufferLength < sizeof(BaseAddressInfo))
+		{
 			LOG_ERROR("Invalid input buffer");
 			Status = STATUS_INVALID_PARAMETER;
 			break;
@@ -156,13 +169,15 @@ NTSTATUS DeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 		{
 			SpinLockGuard Guard(&ProcessCallBackSpinLock);
 
-			if (nullptr != AddressInfo) {
+			if (nullptr != AddressInfo)
+			{
 				ExFreePool(AddressInfo);
 				AddressInfo = nullptr;
 			}
 
 			AddressInfo = (BaseAddressInfo*)ExAllocatePool2(NonPagedPoolFlags, APIAddressLength, 'ADDR');
-			if (nullptr == AddressInfo) {
+			if (nullptr == AddressInfo)
+			{
 				LOG_ERROR("Failed to allocate memory for AddressInfo");
 				Status = STATUS_INSUFFICIENT_RESOURCES;
 				break;
@@ -183,7 +198,8 @@ NTSTATUS DeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 
 		if (nullptr == SystemBuffer
 			|| InputBufferLength < sizeof(WCHAR)
-			|| (InputBufferLength % sizeof(WCHAR)) != 0) {
+			|| (InputBufferLength % sizeof(WCHAR)) != 0)
+			{
 			LOG_ERROR("Invalid input buffer for DLL path\n");
 			Status = STATUS_INVALID_PARAMETER;
 			break;
@@ -191,7 +207,8 @@ NTSTATUS DeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 
 		PCWSTR DllTempPath = (PCWSTR)SystemBuffer;
 		ULONG CharCount = InputBufferLength / sizeof(WCHAR);
-		if (DllTempPath[CharCount - 1] != L'\0') {
+		if (DllTempPath[CharCount - 1] != L'\0')
+		{
 			LOG_ERROR("DLL path is not null-terminated\n");
 			Status = STATUS_INVALID_PARAMETER;
 			break;
@@ -201,7 +218,8 @@ NTSTATUS DeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 		{
 			SpinLockGuard Guard(&ProcessCallBackSpinLock);
 
-			if (nullptr != DllPath.Buffer) {
+			if (nullptr != DllPath.Buffer)
+			{
 				ExFreePool(DllPath.Buffer);
 				DllPath.Buffer = nullptr;
 				DllPath.Length = 0;
@@ -210,7 +228,8 @@ NTSTATUS DeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 
 			USHORT ByteLength = (USHORT)(CharCount * sizeof(WCHAR));
 			DllPath.Buffer = (PWCH)ExAllocatePool2(NonPagedPoolFlags, ByteLength, 'DLL ');
-			if (nullptr == DllPath.Buffer) {
+			if (nullptr == DllPath.Buffer)
+			{
 				LOG_ERROR("Failed to allocate memory for DLL path\n");
 				Status = STATUS_INSUFFICIENT_RESOURCES;
 				break;
@@ -228,7 +247,8 @@ NTSTATUS DeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 		{
 			SpinLockGuard Guard(&ProcessCallBackSpinLock);
 
-			if (IsProcessCallBack) {
+			if (IsProcessCallBack)
+			{
 				Status = STATUS_SUCCESS;
 				break;
 			}
@@ -244,7 +264,8 @@ NTSTATUS DeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 		LOG_INFO("Turning on process callback\n");
 		Status = PsSetCreateProcessNotifyRoutineEx(CreateProcessNotifyRoutineEx, FALSE);
 
-		if (!NT_SUCCESS(Status)) {
+		if (!NT_SUCCESS(Status))
+		{
 			LOG_ERROR("Failed to register process notify routine: 0x%08X\n", Status);
 			break;
 		}
@@ -256,7 +277,8 @@ NTSTATUS DeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 	case IOCTL_TURN_OFF_PROCESS_CALLBACK: {
 		{
 			SpinLockGuard Guard(&ProcessCallBackSpinLock);
-			if (!IsProcessCallBack) {
+			if (!IsProcessCallBack)
+			{
 				Status = STATUS_SUCCESS;
 				break;
 			}
@@ -265,7 +287,8 @@ NTSTATUS DeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 		LOG_INFO("Turning off process callback");
 
 		Status = PsSetCreateProcessNotifyRoutineEx(CreateProcessNotifyRoutineEx, TRUE);
-		if (!NT_SUCCESS(Status)) {
+		if (!NT_SUCCESS(Status))
+		{
 			LOG_ERROR("Failed to unregister process notify routine: 0x%08X", Status);
 			break;
 		}
@@ -274,7 +297,8 @@ NTSTATUS DeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 		break;
 	}
 	case IOCTL_PUSH_WHITE_LIST_ITEM: {
-		if (nullptr == SystemBuffer || InputBufferLength < sizeof(UNICODE_STRING)) {
+		if (nullptr == SystemBuffer || InputBufferLength < sizeof(UNICODE_STRING))
+		{
 			LOG_ERROR("Invalid input buffer for whitelist query");
 			Status = STATUS_INVALID_PARAMETER;
 			break;
@@ -288,7 +312,8 @@ NTSTATUS DeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 		break;
 	}
 	case IOCTL_REMOVE_WHITE_LIST_ITEM: {
-		if (nullptr == SystemBuffer || InputBufferLength < sizeof(UNICODE_STRING)) {
+		if (nullptr == SystemBuffer || InputBufferLength < sizeof(UNICODE_STRING))
+		{
 			LOG_ERROR("Invalid input buffer for whitelist query");
 			Status = STATUS_INVALID_PARAMETER;
 			break;
@@ -300,7 +325,8 @@ NTSTATUS DeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 	}
 	case IOCTL_QUERY_WHITE_LIST_ITEM: {
 
-		if (nullptr == SystemBuffer || InputBufferLength < sizeof(UNICODE_STRING)) {
+		if (nullptr == SystemBuffer || InputBufferLength < sizeof(UNICODE_STRING))
+		{
 			LOG_ERROR("Invalid input buffer for whitelist query");
 			Status = STATUS_INVALID_PARAMETER;
 			break;
@@ -314,7 +340,8 @@ NTSTATUS DeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 		}
 
 		// Ensure bitmap pool exists
-		if (nullptr == BitMapPoolAddress) {
+		if (nullptr == BitMapPoolAddress)
+		{
 			LOG_ERROR("BitMapPoolAddress is NULL");
 			Status = STATUS_INVALID_PARAMETER;
 			break;
@@ -322,9 +349,7 @@ NTSTATUS DeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 
 		PFILE_OBJECT FileObject{};
 		Status = GetFileObject(*FilePath, &FileObject);
-		if (!NT_SUCCESS(Status)) {
-			break;
-		}
+		if (!NT_SUCCESS(Status)) break;
 
 		ULONG64 Index = GetBitmapIndex(FileObject);
 		ObDereferenceObject(FileObject);
@@ -334,7 +359,8 @@ NTSTATUS DeviceControl(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 		Present = QueryMap(BitMapPoolAddress, Index);
 
 		// Write result back to SystemBuffer if there's enough space
-		if (InputBufferLength >= sizeof(BOOLEAN)) {
+		if (InputBufferLength >= sizeof(BOOLEAN))
+		{
 			*(BOOLEAN*)SystemBuffer = Present;
 			Irp->IoStatus.Information = sizeof(BOOLEAN);
 		}
@@ -357,7 +383,8 @@ ReturnStatus:
 	return Status;
 }
 
-NTSTATUS CreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp) noexcept {
+NTSTATUS CreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp) noexcept
+{
 	UNREFERENCED_PARAMETER(DeviceObject);
 	Irp->IoStatus.Status = STATUS_SUCCESS;
 	Irp->IoStatus.Information = 0;
@@ -369,7 +396,8 @@ NTSTATUS CreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp) noexcept {
 
 
 
-VOID DriverUnload(PDRIVER_OBJECT DriverObject) {
+VOID DriverUnload(PDRIVER_OBJECT DriverObject)
+{
 
 	// Stop new injections
 	IsProcessCallBack = FALSE;
@@ -379,7 +407,8 @@ VOID DriverUnload(PDRIVER_OBJECT DriverObject) {
 	// lock, no new work items can be queued. Wait until the pending counter
 	// reaches zero; the completion event is re-armed before each wait so a
 	// stale signal from an earlier injection cannot short-circuit it.
-	if (DriverObject->DeviceObject) {
+	if (DriverObject->DeviceObject)
+	{
 		PDEVICE_EXTENSION Exit = (PDEVICE_EXTENSION)DriverObject->DeviceObject->DeviceExtension;
 
 		{
@@ -387,7 +416,8 @@ VOID DriverUnload(PDRIVER_OBJECT DriverObject) {
 			Exit->IsUnloading = TRUE;
 		}
 
-		while (InterlockedCompareExchange(&Exit->PendingWorkItems, 0, 0) != 0) {
+		while (InterlockedCompareExchange(&Exit->PendingWorkItems, 0, 0) != 0)
+		{
 			KeClearEvent(&Exit->WorkItemsCompletedEvent);
 			if (InterlockedCompareExchange(&Exit->PendingWorkItems, 0, 0) == 0) break;
 			KeWaitForSingleObject(&Exit->WorkItemsCompletedEvent,
@@ -396,10 +426,14 @@ VOID DriverUnload(PDRIVER_OBJECT DriverObject) {
 	}
 
 	// Drain pending APCs (KernelRoutine/RundownRoutine in driver .text)
-	if (InterlockedCompareExchange(&PendingApcCount, 0, 0) != 0) {
+	if (InterlockedCompareExchange(&PendingApcCount, 0, 0) != 0)
+	{
 		KeWaitForSingleObject(&AllApcsCompletedEvent,
 			Executive, KernelMode, FALSE, NULL);
 	}
+
+	// Free the APC lookaside list only after every APC has drained above
+	ApcLookasideCleanup();
 
 	// Free resources
 	if (DllPath.Buffer)    ExFreePool(DllPath.Buffer);
@@ -441,7 +475,8 @@ extern "C" NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING Reg
 		&DeviceObject
 	);
 
-	if (!NT_SUCCESS(Status)) {
+	if (!NT_SUCCESS(Status))
+	{
 		LOG_ERROR("Failed to create device: 0x%08X", Status);
 		goto Cleanup;
 	}
@@ -471,7 +506,8 @@ extern "C" NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING Reg
 	KeInsertQueueApc = (KEINSERTQUEUEAPC)MmGetSystemRoutineAddress(&FunctionName1);
 	PsIsProtectedProcessLight = (PSISPROTECTEDPROCESSLIGHT)MmGetSystemRoutineAddress(&FunctionName3);
 
-	if (nullptr == KeInitializeApc || nullptr == KeInsertQueueApc || nullptr == PsIsProtectedProcessLight) {
+	if (nullptr == KeInitializeApc || nullptr == KeInsertQueueApc || nullptr == PsIsProtectedProcessLight)
+	{
 		LOG_ERROR("Failed to get KeInitializeApc or KeInsertQueueApc or PsIsProtectedProcessLight address");
 		Status = STATUS_INSUFFICIENT_RESOURCES;
 		goto Cleanup;
@@ -479,7 +515,8 @@ extern "C" NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING Reg
 
 
 	ThreadListHeadOffset = FindThreadListHeadOffset();
-	if (ThreadListHeadOffset != 0UL) {
+	if (ThreadListHeadOffset != 0UL)
+	{
 		LOG_INFO("Found thread list head offset: 0x%X", ThreadListHeadOffset);
 	}
 	else {
@@ -487,28 +524,32 @@ extern "C" NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING Reg
 	}
 
 	ThreadListEntryOffset = FindThreadListEntryOffset();
-	if (ThreadListEntryOffset != 0UL) {
+	if (ThreadListEntryOffset != 0UL)
+	{
 		LOG_INFO("Found thread list entry offset: 0x%X", ThreadListEntryOffset);
 	}
 	else {
 		LOG_ERROR("Failed to find thread list entry offset");
 	}
 
-	BitMapPoolAddress = ExAllocatePool2(NonPagedPoolFlags, BIT_MAP_SIZE, 'BITM');
-	if (nullptr == BitMapPoolAddress) {
+	BitMapPoolAddress = ExAllocatePool2(NonPagedPoolFlags | POOL_FLAG_CACHE_ALIGNED, BIT_MAP_SIZE, 'BITM');
+	if (nullptr == BitMapPoolAddress)
+	{
 		LOG_ERROR("Failed to allocate memory");
 		Status = STATUS_INSUFFICIENT_RESOURCES;
 		goto Cleanup;
 	}
 
 	Status = WhiteListInit(BitMapPoolAddress);
-	if (!NT_SUCCESS(Status)) {
+	if (!NT_SUCCESS(Status))
+	{
 		LOG_ERROR("WhiteListInit failed: 0x%08X", Status);
 		goto Cleanup;
 	}
 
 	KeInitializeSpinLock(&ProcessCallBackSpinLock);
 	KeInitializeEvent(&AllApcsCompletedEvent, NotificationEvent, FALSE);
+	ApcLookasideInit();
 	DriverObject->MajorFunction[IRP_MJ_CREATE] = CreateClose;
 	DriverObject->MajorFunction[IRP_MJ_CLOSE] = CreateClose;
 	DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = DeviceControl;
@@ -518,11 +559,14 @@ extern "C" NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING Reg
 
 Cleanup:
 	IoDeleteSymbolicLink(&SymbolicLinkName);
-	if (nullptr != BitMapPoolAddress) {
+	if (nullptr != BitMapPoolAddress)
+	{
 		ExFreePool(BitMapPoolAddress);
 		BitMapPoolAddress = nullptr;
 	}
-	if (DeviceObject) {
+	
+	if (DeviceObject)
+	{
 		IoDeleteDevice(DeviceObject);
 		DeviceObject = nullptr;
 	}
