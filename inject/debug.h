@@ -13,7 +13,7 @@
 #else
 
     #ifndef LOG_INFO
-    #define LOG_INFO(text, ...) ((void)0)
+    #define LOG_INFO(text, ...) __noop()
     #endif
 #endif
 
@@ -33,7 +33,7 @@
         #endif
     #else
         #ifndef LOG_ERROR
-        #define LOG_ERROR(text, ...) ((void)0)
+        #define LOG_ERROR(text, ...) __noop()
         #endif
     #endif
 #endif

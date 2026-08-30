@@ -90,23 +90,23 @@ ULONG64 GetBitmapIndex(PFILE_OBJECT FileObject) noexcept {
 VOID SetMap(PVOID BitMapAddress, ULONG64 Index, BOOLEAN IsSet) noexcept {
     ULONG64 QwordIndex = Index >> 6; //  Index / 64
     ULONG64 BitOffset = Index & 63;  //  Index % 64
-    LONG64* Ptr64 = (LONG64*)BitMapAddress + QwordIndex;
-    LONG64 bitMask = 1i64 << BitOffset;
+    ULONG64* Ptr64 = (ULONG64*)BitMapAddress + QwordIndex;
+    ULONG64 bitMask = 1ULL << BitOffset;
 
     if (IsSet) {
-        InterlockedOr64(Ptr64, bitMask);    // Set bit to 1
+        InterlockedOr64((LONG64*)Ptr64, bitMask);    // Set bit to 1
     }
     else {
-        InterlockedAnd64(Ptr64, ~bitMask);  // Set bit to 0
+        InterlockedAnd64((LONG64*)Ptr64, ~bitMask);  // Set bit to 0
     }
 }
 
 
-BOOLEAN QueryMap(PVOID BitMapAddress, ULONG64 Index) {
+BOOLEAN QueryMap(PVOID BitMapAddress, ULONG64 Index) noexcept {
     ULONG64 QwordIndex = Index >> 6;   // Index / 64
     ULONG64 BitInQword = Index & 63;   // Index % 64
-    LONG64* Ptr64 = (LONG64*)BitMapAddress + QwordIndex;
-    LONG64 Data = InterlockedCompareExchange64(Ptr64, 0, 0);
+    ULONG64* Ptr64 = (ULONG64*)BitMapAddress + QwordIndex;
+    ULONG64 Data = InterlockedCompareExchange64((LONG64*)Ptr64, 0, 0);
     return (Data >> BitInQword) & 1;
 }
 

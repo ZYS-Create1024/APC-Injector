@@ -5,14 +5,10 @@
 
 #include <Windows.h>
 
-// ©¤©¤ Device / symbolic link name ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
-// Must match the driver's definitions in inject.cpp:
-//   \\Device\\MyMonitor   /   \\??\\MyMonitorLink
+
 #define DEVICE_SYMLINK L"\\\\.\\MyMonitorLink"
 
-// ©¤©¤ Shared structure: matches AddressInfo.h in the driver ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
-// Passed to IOCTL_SET_LOADLIBRARY_ADDRESS so the driver knows where
-// LoadLibraryA lives in the target process.
+
 typedef struct _BaseAddressInfo {
     ULONG64 LoadLibraryAddress;   // Address of LoadLibraryA/W in target
     ULONG64 Kernel32BaseAddress;  // Base of kernel32.dll
@@ -30,9 +26,6 @@ typedef struct _UNICODE_STRING {
 } UNICODE_STRING;
 typedef UNICODE_STRING* PUNICODE_STRING;
 typedef const UNICODE_STRING* PCUNICODE_STRING;
-
-// ©¤©¤ IOCTL definitions ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
-// Mirrors IOCTL.h in the driver.  CTL_CODE(DeviceType, Function, Method, Access)
 
 #define IOCTL_SET_LOADLIBRARY_ADDRESS  \
     CTL_CODE(FILE_DEVICE_UNKNOWN, 0x800, METHOD_BUFFERED, FILE_WRITE_ACCESS)

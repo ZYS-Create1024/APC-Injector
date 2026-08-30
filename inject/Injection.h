@@ -6,7 +6,8 @@
 
 // ── Injection context passed to work items
 
-typedef struct INJECT_CONTEXT {
+typedef struct INJECT_CONTEXT
+{
 	PEPROCESS Process;
 	HANDLE ProcessId;
 	PIO_WORKITEM WorkItem;
@@ -14,7 +15,8 @@ typedef struct INJECT_CONTEXT {
 
 // ── Device extension (work item + unload coordination)
 
-typedef struct DEVICE_EXTENSION {
+typedef struct DEVICE_EXTENSION
+{
 	KSPIN_LOCK StateLock;
 	PDEVICE_OBJECT DeviceObject;
 	KEVENT WorkItemsCompletedEvent;

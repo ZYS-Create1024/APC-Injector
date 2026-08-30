@@ -8,6 +8,20 @@
 volatile LONG PendingApcCount = 0;
 KEVENT AllApcsCompletedEvent;
 
+// Pre-allocated KAPC pool: recycled in the APC callbacks instead of being freed
+// back to the pool on every injection.
+namespace {
+    NPAGED_LOOKASIDE_LIST ApcLookaside;
+}
+
+VOID ApcLookasideInit() {
+    ExInitializeNPagedLookasideList(&ApcLookaside, nullptr, nullptr, 0, sizeof(KAPC), 'KAPC', 0);
+}
+
+VOID ApcLookasideCleanup() {
+    ExDeleteNPagedLookasideList(&ApcLookaside);
+}
+
 VOID ApcKernelRoutine(PKAPC Apc,
 	PKNORMAL_ROUTINE* NormalRoutine,
 	PVOID* NormalContext,
@@ -17,7 +31,7 @@ VOID ApcKernelRoutine(PKAPC Apc,
 	UNREFERENCED_PARAMETER(NormalContext);
 	UNREFERENCED_PARAMETER(SystemArgument1);
 	UNREFERENCED_PARAMETER(SystemArgument2);
-	ExFreePool(Apc);
+	ExFreeToNPagedLookasideList(&ApcLookaside, Apc);
 
 	if (0 == InterlockedDecrement(&PendingApcCount)) {
 		KeSetEvent(&AllApcsCompletedEvent, IO_NO_INCREMENT, FALSE);
@@ -26,7 +40,7 @@ VOID ApcKernelRoutine(PKAPC Apc,
 
 VOID ApcRundownRoutine(PKAPC Apc)
 {
-	ExFreePool(Apc);
+	ExFreeToNPagedLookasideList(&ApcLookaside, Apc);
 
 	if (0 == InterlockedDecrement(&PendingApcCount)) {
 		KeSetEvent(&AllApcsCompletedEvent, IO_NO_INCREMENT, FALSE);
@@ -124,7 +138,7 @@ VOID InjectDllViaAPC(PEPROCESS Process, HANDLE ProcessId) {
 		const auto& ThreadGuard = ObjectReferenceGuard<_KTHREAD>(Thread);
 		if(!ThreadGuard) continue;
 
-		PKAPC Apc = (PKAPC)ExAllocatePool2(NonPagedPoolFlags, sizeof(KAPC), 'KAPC');
+		PKAPC Apc = (PKAPC)ExAllocateFromNPagedLookasideList(&ApcLookaside);
 		if (nullptr == Apc) {
 			continue;
 		}
@@ -147,7 +161,7 @@ VOID InjectDllViaAPC(PEPROCESS Process, HANDLE ProcessId) {
 			break;
 		}
 		else {
-			ExFreePool(Apc);
+			ExFreeToNPagedLookasideList(&ApcLookaside, Apc);
 		}
 	}
 
